@@ -63,6 +63,9 @@ export const login = async (req: Request, res: Response) => {
 
     const userExists = await UserModel.findOne({ email: req.body.email });
     const adminExists = await AdminModel.findOne({ email: req.body.email });
+    console.log(userExists,' userExists');
+    console.log(adminExists, ' admin exists');
+    
     if (userExists) {
       const passwordMatch = await bcrypt.compare(req.body.password, userExists.password);
       if (!passwordMatch) {
