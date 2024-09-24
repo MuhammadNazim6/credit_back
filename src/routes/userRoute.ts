@@ -9,7 +9,7 @@ userRoute.post("/signup", signup)
 userRoute.post("/google-signin", googleSignin)
 userRoute.post("/google-login", googleLogin)
 userRoute.post("/loan-request", createLoan)
-userRoute.get("/user-loans/:userId", getuserLoans)
+userRoute.get("/loans/:userId", getuserLoans)
 
 
 export default userRoute;

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserModel } from '../models/userModel';
 import bcrypt from 'bcrypt'
 import { validateFields } from '../utils/validateFields';
+import { AdminModel } from '../models/adminModel';
 
 const securePassword = async (password: string) => {
   try {
@@ -15,7 +16,7 @@ const securePassword = async (password: string) => {
 
 export const signup = async (req: Request, res: Response) => {
   try {
-    const validationResult = validateFields(req.body, ['email','password','name']);
+    const validationResult = validateFields(req.body, ['email', 'password', 'name']);
     if (!validationResult.isValid) {
       return res.status(400).json({
         success: false,
@@ -52,15 +53,50 @@ export const signup = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const validationResult = validateFields(req.body, ['email','password']);
+    const validationResult = validateFields(req.body, ['email', 'password']);
     if (!validationResult.isValid) {
       return res.status(400).json({
         success: false,
         message: validationResult.message,
       });
     }
-    
+
     const userExists = await UserModel.findOne({ email: req.body.email });
+    const adminExists = await AdminModel.findOne({ email: req.body.email });
+    if (userExists) {
+      const passwordMatch = await bcrypt.compare(req.body.password, userExists.password);
+      if (!passwordMatch) {
+        res.status(200).json({
+          success: false,
+          message: 'Incorrect username or password entered',
+        });
+        return
+      }
+      res.status(200).json({
+        success: true,
+        message: 'Logged in succesfully',
+        data: userExists
+      });
+      return
+
+    } else if (adminExists) {
+      const passwordMatch = await bcrypt.compare(req.body.password, adminExists.password);
+      if (!passwordMatch) {
+        res.status(200).json({
+          success: false,
+          message: 'Incorrect username or password entered',
+        });
+        return
+      }
+      res.status(200).json({
+        success: true,
+        message: 'Logged in succesfully',
+        data: adminExists,
+        isAdmin: true
+      });
+      return
+    }
+
     if (!userExists) {
       res.status(200).json({
         success: false,
@@ -68,21 +104,7 @@ export const login = async (req: Request, res: Response) => {
       });
       return
     }
-    const passwordMatch = await bcrypt.compare(req.body.password, userExists.password);
-    if (!passwordMatch) {
-      res.status(200).json({
-        success: false,
-        message: 'Incorrect username or password entered',
-      });
-      return
-    }
 
-    res.status(200).json({
-      success: true,
-      message: 'Logged in succesfully',
-      data: userExists
-    });
-    return
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');
@@ -92,7 +114,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const googleSignin = async (req: Request, res: Response) => {
   try {
-    const validationResult = validateFields(req.body, ['email','password','name']);
+    const validationResult = validateFields(req.body, ['email', 'password', 'name']);
     if (!validationResult.isValid) {
       return res.status(400).json({
         success: false,
@@ -107,11 +129,11 @@ export const googleSignin = async (req: Request, res: Response) => {
         res.status(200).json({
           success: true,
           message: 'Logged in successfully',
-          data:userExists
+          data: userExists
         });
         return
       }
-      
+
       res.status(200).json({
         success: false,
         message: 'User already exists with this mail'
@@ -133,7 +155,7 @@ export const googleSignin = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Internal Server Error');  
+    res.status(500).send('Internal Server Error');
   }
 };
 
